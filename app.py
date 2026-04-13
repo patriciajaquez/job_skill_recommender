@@ -80,19 +80,25 @@ def load_comprehensive_data():
             
             if not demo_mode:
                 # Try to get live job data
-                live_df = get_live_job_data("data analyst", "remote", 100)
-                if not live_df.empty:
-                    live_jobs = live_df.to_dict('records')
+                live_result = get_live_job_data("data analyst", "remote")
+                # live_result is a dict keyed by source name: {'muse': [...], ...}
+                all_live_jobs = []
+                active_sources = []
+                for source, jobs in live_result.items():
+                    if jobs:
+                        all_live_jobs.extend(jobs)
+                        active_sources.append(source.capitalize())
+                if all_live_jobs:
                     return {
-                        'live_data': live_jobs,
+                        'live_data': all_live_jobs,
                         'summary': {
-                            'total_jobs': len(live_jobs),
-                            'sources': ['Direct API'],
+                            'total_jobs': len(all_live_jobs),
+                            'sources': active_sources,
                             'last_updated': datetime.now().isoformat()
                         },
-                        'job_titles': _extract_job_titles_from_unified(live_jobs),
-                        'skills': _extract_skills_from_unified(live_jobs),
-                        'locations': _extract_locations_from_unified(live_jobs)
+                        'job_titles': _extract_job_titles_from_unified(all_live_jobs),
+                        'skills': _extract_skills_from_unified(all_live_jobs),
+                        'locations': _extract_locations_from_unified(all_live_jobs)
                     }
         
         # Final fallback to local data files
@@ -108,6 +114,8 @@ def load_comprehensive_data():
             if data_source.endswith('.csv'):
                 # Load sample CSV data
                 df = pd.read_csv(f'data/{data_source}', nrows=max_rows)
+                # Normalize column names to lowercase snake_case for consistent access
+                df.columns = [c.lower().replace(' ', '_') for c in df.columns]
                 jobs = df.to_dict('records')
                 return {
                     'live_data': jobs,
@@ -190,8 +198,21 @@ def _extract_skills_from_unified(jobs):
     
     all_skills = set()
     for job in jobs:
-        if job.get('skills') and isinstance(job['skills'], list):
-            all_skills.update(job['skills'])
+        raw = job.get('skills')
+        if not raw:
+            continue
+        if isinstance(raw, list):
+            all_skills.update(raw)
+        elif isinstance(raw, str):
+            # CSV skills are free-form text; look for known keywords
+            raw_lower = raw.lower()
+            for known in ['python', 'javascript', 'java', 'c++', 'c#', 'golang', 'rust',
+                          'react', 'angular', 'vue', 'nodejs', 'html', 'css',
+                          'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform',
+                          'sql', 'postgresql', 'mysql', 'mongodb', 'redis',
+                          'machine learning', 'ai', 'tensorflow', 'pytorch', 'pandas', 'numpy']:
+                if known in raw_lower:
+                    all_skills.add(known)
     
     # Categorize skills
     categories = {
