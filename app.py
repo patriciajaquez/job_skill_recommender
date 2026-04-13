@@ -29,9 +29,7 @@ from collections import Counter
 import warnings
 warnings.filterwarnings('ignore')
 
-# Unified data loader removed - Phase 2 will use N8N pipeline
-UNIFIED_DATA_AVAILABLE = False  # Will be replaced by N8N in Phase 2
-st.sidebar.info("ℹ️ Unified data pipeline: Phase 2 implementation pending")
+UNIFIED_DATA_AVAILABLE = False
 
 # Import API integration for fallback
 try:
@@ -42,16 +40,23 @@ except ImportError:
 
 # Load environment variables manually
 def load_env_vars():
-    """Load environment variables from .env file"""
+    """Load environment variables from .env file or Streamlit Secrets (Cloud)."""
     env_vars = {}
+    # 1. Try Streamlit Secrets (works on Streamlit Community Cloud)
+    try:
+        env_vars.update(dict(st.secrets))
+    except Exception:
+        pass
+    # 2. Try local .env file (works in local development)
     try:
         with open('.env', 'r') as f:
             for line in f:
-                if '=' in line and not line.strip().startswith('#'):
-                    key, value = line.strip().split('=', 1)
-                    env_vars[key] = value
+                line = line.strip()
+                if '=' in line and not line.startswith('#'):
+                    key, value = line.split('=', 1)
+                    env_vars.setdefault(key.strip(), value.strip())
     except FileNotFoundError:
-        print("No .env file found. Please create one with your API keys.")
+        pass
     return env_vars
 
 # Import the new API integration
@@ -70,7 +75,6 @@ def load_comprehensive_data():
         # Skip to API integration fallback
         # Fallback to API integration if available
         if API_INTEGRATION_AVAILABLE:
-            st.sidebar.warning("🔄 Falling back to direct API integration")
             env_vars = load_env_vars()
             demo_mode = env_vars.get('DEMO_MODE', 'false').lower() == 'true'
             
@@ -92,7 +96,6 @@ def load_comprehensive_data():
                     }
         
         # Final fallback to local data files
-        st.sidebar.warning("📁 Using local fallback data")
         try:
             # Try to load configuration
             with open('data/config.json', 'r') as f:
@@ -125,7 +128,7 @@ def load_comprehensive_data():
             
         except FileNotFoundError:
             # Return minimal structure for synthetic data fallback
-            st.sidebar.error("❌ No data sources available - using synthetic data")
+            st.sidebar.warning("⚠️ No local data found — some features may be limited")
             return {
                 'live_data': [],
                 'summary': {

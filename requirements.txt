@@ -1,4 +1,4 @@
-# Job Market Intelligence Platform - Core Dependencies
+# Core
 streamlit==1.45.0
 pandas==2.2.3
 numpy==2.3.2
@@ -6,16 +6,4 @@ plotly==6.0.1
 scikit-learn==1.7.1
 requests==2.32.3
 python-dotenv==1.0.0
-
-# Additional dependencies for enhanced API integration
 urllib3==2.2.2
-aiohttp==3.9.5
-azure-storage-blob==12.20.0
-azure-identity==1.17.1
-azure-keyvault-secrets==4.8.0
-
-# Data processing and ML
-textblob==0.17.1
-wordcloud==1.9.3
-streamlit-option-menu==0.3.13
-flask>=3.0.0
