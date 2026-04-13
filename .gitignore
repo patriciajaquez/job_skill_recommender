@@ -1,0 +1,104 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Database files
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Large data files (GitHub has 100MB limit, some CSV files are larger)
+data/raw/job_descriptions.csv
+data/raw/linkedin_job_posts_insights.csv
+
+# Database files - use unified database instead of multiple CSV files
+data/processed/*.db
+
+# Keep essential CSV files for backup (smaller ones)
+# data/raw/job_postings.csv - KEEP (small file)
+# data/raw/salary_data.csv - KEEP (small file) 
+# data/raw/unified_jobs_dataset.csv - KEEP (processed unified data)
+
+# Model files
+*.pkl
+*.joblib
+*.h5
+*.pb
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Azure/Cloud credentials
+.azure/
+*.pem
+*.key
+
+# Environment variables
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Power BI
+*.pbix.tmp
+
+# Cache directories
+.cache/
+.pytest_cache/
+node_modules

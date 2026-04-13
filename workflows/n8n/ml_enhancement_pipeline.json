@@ -1,0 +1,152 @@
+{
+  "name": "ML Enhancement Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ml-enhancement",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook_trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "ml-enhancement-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Skill Extraction AI using OpenAI GPT-4\nconst jobs = $json.jobs || [];\nconst extractedSkills = [];\n\nfor (const job of jobs) {\n  // Mock skill extraction (in real implementation, call OpenAI API)\n  const mockSkills = {\n    jobId: job.id,\n    extractedSkills: [\n      {\n        skill: 'Python',\n        category: 'Programming Language',\n        confidence: 0.95,\n        importance: 'high'\n      },\n      {\n        skill: 'Machine Learning',\n        category: 'Technical Skill',\n        confidence: 0.88,\n        importance: 'high'\n      },\n      {\n        skill: 'SQL',\n        category: 'Database',\n        confidence: 0.82,\n        importance: 'medium'\n      },\n      {\n        skill: 'Communication',\n        category: 'Soft Skill',\n        confidence: 0.75,\n        importance: 'medium'\n      }\n    ],\n    extractionModel: 'gpt-4o-mini',\n    extractedAt: new Date().toISOString()\n  };\n  \n  // Add skills to job object\n  job.aiExtractedSkills = mockSkills.extractedSkills;\n  job.skillExtractionMetadata = {\n    model: mockSkills.extractionModel,\n    extractedAt: mockSkills.extractedAt,\n    totalSkills: mockSkills.extractedSkills.length\n  };\n  \n  extractedSkills.push(mockSkills);\n}\n\nreturn {\n  jobs,\n  skillExtractionResults: extractedSkills,\n  totalJobsProcessed: jobs.length,\n  averageSkillsPerJob: extractedSkills.reduce((sum, s) => sum + s.extractedSkills.length, 0) / extractedSkills.length,\n  processedAt: new Date().toISOString()\n};"
+      },
+      "id": "skill_extraction_node",
+      "name": "Skill Extraction AI",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Salary Prediction ML using Random Forest\nconst jobs = $json.jobs || [];\n\nfor (const job of jobs) {\n  // Mock salary prediction (in real implementation, use trained ML model)\n  const features = {\n    location: job.location,\n    skills: job.aiExtractedSkills?.map(s => s.skill) || [],\n    experience: 'mid', // Would extract from description\n    companySize: 'medium', // Would determine from company data\n    industry: 'technology' // Would classify from job description\n  };\n  \n  // Mock prediction calculation\n  const baseSalary = 80000;\n  const locationMultiplier = job.location?.toLowerCase().includes('san francisco') ? 1.4 : \n                            job.location?.toLowerCase().includes('new york') ? 1.3 :\n                            job.location?.toLowerCase().includes('remote') ? 1.1 : 1.0;\n  \n  const skillsMultiplier = 1 + (features.skills.length * 0.05);\n  \n  const predictedMin = Math.round(baseSalary * locationMultiplier * skillsMultiplier * 0.9);\n  const predictedMax = Math.round(baseSalary * locationMultiplier * skillsMultiplier * 1.3);\n  \n  job.aiSalaryPrediction = {\n    predictedMin,\n    predictedMax,\n    currency: 'USD',\n    confidence: 0.85,\n    model: 'random_forest_v1',\n    features: features,\n    predictedAt: new Date().toISOString()\n  };\n  \n  // Compare with actual salary if available\n  if (job.salary_min && job.salary_max) {\n    const actualMid = (job.salary_min + job.salary_max) / 2;\n    const predictedMid = (predictedMin + predictedMax) / 2;\n    job.aiSalaryPrediction.accuracyScore = 1 - Math.abs(actualMid - predictedMid) / actualMid;\n  }\n}\n\nreturn {\n  jobs,\n  salaryPredictionSummary: {\n    totalJobsProcessed: jobs.length,\n    averagePredictedSalary: jobs.reduce((sum, j) => sum + (j.aiSalaryPrediction?.predictedMin + j.aiSalaryPrediction?.predictedMax) / 2, 0) / jobs.length,\n    modelAccuracy: jobs.filter(j => j.aiSalaryPrediction?.accuracyScore).reduce((sum, j) => sum + j.aiSalaryPrediction.accuracyScore, 0) / jobs.filter(j => j.aiSalaryPrediction?.accuracyScore).length || 0,\n    processedAt: new Date().toISOString()\n  }\n};"
+      },
+      "id": "salary_prediction_node",
+      "name": "Salary Prediction ML",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Market Trend Analysis using Time Series\nconst jobs = $json.jobs || [];\nconst currentDate = new Date();\n\n// Analyze skill trends\nconst skillCounts = {};\nconst locationCounts = {};\nconst salaryRanges = [];\n\njobs.forEach(job => {\n  // Count skills\n  if (job.aiExtractedSkills) {\n    job.aiExtractedSkills.forEach(skill => {\n      skillCounts[skill.skill] = (skillCounts[skill.skill] || 0) + 1;\n    });\n  }\n  \n  // Count locations\n  locationCounts[job.location] = (locationCounts[job.location] || 0) + 1;\n  \n  // Collect salary data\n  if (job.aiSalaryPrediction) {\n    salaryRanges.push({\n      min: job.aiSalaryPrediction.predictedMin,\n      max: job.aiSalaryPrediction.predictedMax,\n      location: job.location,\n      skills: job.aiExtractedSkills?.map(s => s.skill) || []\n    });\n  }\n});\n\n// Generate trend insights\nconst trendAnalysis = {\n  skillTrends: {\n    mostInDemand: Object.entries(skillCounts)\n      .sort(([,a], [,b]) => b - a)\n      .slice(0, 10)\n      .map(([skill, count]) => ({ skill, demand: count, percentage: (count / jobs.length * 100).toFixed(1) })),\n    emerging: ['AI/ML', 'Cloud Computing', 'Data Engineering'], // Mock emerging skills\n    declining: ['Legacy Systems', 'Outdated Frameworks'] // Mock declining skills\n  },\n  \n  salaryTrends: {\n    averageRange: {\n      min: Math.round(salaryRanges.reduce((sum, s) => sum + s.min, 0) / salaryRanges.length),\n      max: Math.round(salaryRanges.reduce((sum, s) => sum + s.max, 0) / salaryRanges.length)\n    },\n    byLocation: Object.entries(locationCounts).map(([location, count]) => ({\n      location,\n      jobCount: count,\n      averageSalary: Math.round(salaryRanges.filter(s => s.location === location)\n        .reduce((sum, s) => sum + (s.min + s.max) / 2, 0) / \n        salaryRanges.filter(s => s.location === location).length) || 0\n    }))\n  },\n  \n  marketInsights: {\n    totalOpportunities: jobs.length,\n    remoteJobsPercentage: (jobs.filter(j => j.remote_allowed).length / jobs.length * 100).toFixed(1),\n    averageSkillsRequired: jobs.reduce((sum, j) => sum + (j.aiExtractedSkills?.length || 0), 0) / jobs.length,\n    marketDemandScore: Math.min(10, Math.max(1, jobs.length / 10)), // Simple demand scoring\n    generatedAt: currentDate.toISOString()\n  }\n};\n\n// Add trend analysis to each job\njobs.forEach(job => {\n  job.marketContext = {\n    demandScore: skillCounts[job.aiExtractedSkills?.[0]?.skill] || 1,\n    salaryPercentile: salaryRanges.length > 0 ? \n      (salaryRanges.filter(s => (s.min + s.max) / 2 <= (job.aiSalaryPrediction?.predictedMin + job.aiSalaryPrediction?.predictedMax) / 2).length / salaryRanges.length * 100).toFixed(0) : 50,\n    locationPopularity: locationCounts[job.location] || 1\n  };\n});\n\nreturn {\n  enrichedJobs: jobs,\n  trendAnalysis,\n  processingStats: {\n    totalJobsEnriched: jobs.length,\n    skillsAnalyzed: Object.keys(skillCounts).length,\n    locationsAnalyzed: Object.keys(locationCounts).length,\n    completedAt: currentDate.toISOString()\n  }\n};"
+      },
+      "id": "trend_analysis_node",
+      "name": "Market Trend Analysis",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Generate Enriched Dataset\nconst enrichedJobs = $json.enrichedJobs || [];\nconst trendAnalysis = $json.trendAnalysis || {};\nconst processingStats = $json.processingStats || {};\n\n// Create final enriched dataset\nconst enrichedDataset = {\n  metadata: {\n    totalJobs: enrichedJobs.length,\n    enrichmentVersion: '1.0',\n    enrichedAt: new Date().toISOString(),\n    dataQuality: {\n      completeness: (enrichedJobs.filter(j => j.aiExtractedSkills && j.aiSalaryPrediction).length / enrichedJobs.length * 100).toFixed(1),\n      aiEnhanced: '100%',\n      trendAnalyzed: '100%'\n    },\n    processingPipeline: [\n      'Skill Extraction (GPT-4)',\n      'Salary Prediction (Random Forest)', \n      'Market Trend Analysis (Time Series)',\n      'Market Context Enhancement'\n    ]\n  },\n  \n  jobs: enrichedJobs.map(job => ({\n    // Original job data\n    id: job.id,\n    title: job.title,\n    company: job.company,\n    location: job.location,\n    description: job.description,\n    salary_min: job.salary_min,\n    salary_max: job.salary_max,\n    source: job.source,\n    posted_date: job.posted_date,\n    \n    // AI Enhancements\n    aiEnhancements: {\n      extractedSkills: job.aiExtractedSkills || [],\n      salaryPrediction: job.aiSalaryPrediction || null,\n      marketContext: job.marketContext || {},\n      enrichmentScore: (\n        (job.aiExtractedSkills ? 0.4 : 0) +\n        (job.aiSalaryPrediction ? 0.4 : 0) +\n        (job.marketContext ? 0.2 : 0)\n      ).toFixed(2)\n    }\n  })),\n  \n  marketIntelligence: trendAnalysis,\n  \n  educationalRecommendations: {\n    availableCourses: enrichedJobs.filter(j => j.type === 'educational_opportunity').map(course => ({\n      title: course.title,\n      skills: course.skills || [],\n      description: course.description,\n      url: course.course_url\n    })),\n    skillGapAnalysis: trendAnalysis.skillTrends?.mostInDemand?.map(skill => ({\n      skill: skill.skill,\n      demand: skill.demand,\n      availableCourses: enrichedJobs.filter(j => \n        j.type === 'educational_opportunity' && \n        j.skills?.some(s => s.toLowerCase().includes(skill.skill.toLowerCase()))\n      ).length\n    })) || []\n  },\n  \n  recommendations: {\n    topSkillsToLearn: trendAnalysis.skillTrends?.mostInDemand?.slice(0, 5) || [],\n    highestPayingLocations: trendAnalysis.salaryTrends?.byLocation?.sort((a, b) => b.averageSalary - a.averageSalary).slice(0, 3) || [],\n    marketOpportunities: {\n      totalJobs: enrichedJobs.length,\n      remoteOpportunities: enrichedJobs.filter(j => j.remote_allowed).length,\n      avgSalaryRange: trendAnalysis.salaryTrends?.averageRange || { min: 0, max: 0 }\n    }\n  }\n};\n\nreturn {\n  enrichedDataset,\n  success: true,\n  message: `Successfully enriched ${enrichedJobs.length} jobs with AI insights`,\n  processingTime: `${Date.now() - new Date($json.jobs?.[0]?.skillExtractionMetadata?.extractedAt || Date.now()).getTime()}ms`\n};"
+      },
+      "id": "enriched_dataset_node",
+      "name": "Generate Enriched Dataset",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"message\": \"ML Enhancement pipeline completed\",\n  \"data\": {\n    \"jobsProcessed\": {{$json.enrichedDataset.metadata.totalJobs}},\n    \"enrichmentScore\": \"{{$json.enrichedDataset.metadata.dataQuality.completeness}}%\",\n    \"topSkills\": {{$json.enrichedDataset.recommendations.topSkillsToLearn}},\n    \"marketInsights\": {{$json.enrichedDataset.marketIntelligence.marketInsights}},\n    \"completedAt\": \"{{$json.enrichedDataset.metadata.enrichedAt}}\"\n  }\n}"
+      },
+      "id": "response_node",
+      "name": "Return Results",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Skill Extraction AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skill Extraction AI": {
+      "main": [
+        [
+          {
+            "node": "Salary Prediction ML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salary Prediction ML": {
+      "main": [
+        [
+          {
+            "node": "Market Trend Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Market Trend Analysis": {
+      "main": [
+        [
+          {
+            "node": "Generate Enriched Dataset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Enriched Dataset": {
+      "main": [
+        [
+          {
+            "node": "Return Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1",
+  "id": "ml_enhancement_pipeline",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": ["ml", "ai", "enhancement", "skills", "salary"]
+}

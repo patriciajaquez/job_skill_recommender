@@ -1,0 +1,28 @@
+{
+  "data_sources": {
+    "development": {
+      "job_data": "processed/job_descriptions_sample.csv",
+      "max_rows": 10000,
+      "use_cache": true,
+      "cache_ttl": 3600
+    },
+    "production": {
+      "job_data": "processed/job_descriptions_optimized.db",
+      "use_cache": true,
+      "cache_ttl": 1800,
+      "enable_pagination": true,
+      "page_size": 1000
+    }
+  },
+  "performance": {
+    "lazy_loading": true,
+    "memory_limit_mb": 512,
+    "chunk_size": 1000,
+    "enable_compression": true
+  },
+  "features": {
+    "synthetic_data_fallback": true,
+    "real_time_apis": false,
+    "advanced_analytics": true
+  }
+}
