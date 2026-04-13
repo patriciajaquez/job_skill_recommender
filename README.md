@@ -2,10 +2,13 @@
 
 > A Streamlit-based job market intelligence tool: enter your skills and target role, get ranked job matches and market insights.
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue)](https://www.python.org/)
+[![Live demo](https://img.shields.io/badge/demo-live-brightgreen)](https://job-skill-recommender.streamlit.app/)
+[![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.x-red)](https://streamlit.io/)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-TF--IDF-orange)](https://scikit-learn.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**🔗 Live demo: https://job-skill-recommender.streamlit.app/**
 
 ---
 
@@ -117,7 +120,7 @@ Python · Streamlit · pandas · scikit-learn (TF-IDF) · Plotly · NumPy · req
 
 ## What I'd improve next
 
-- Deploy to **Streamlit Community Cloud** with a live demo link
+- ~~Deploy to Streamlit Community Cloud~~ ✅ Live at https://job-skill-recommender.streamlit.app/
 - Add **sentence-transformer embeddings** (`all-MiniLM-L6-v2`) for semantic matching — better at catching synonyms like "data wrangling" ↔ "ETL"
 - Build a small **evaluation set**: (CV, target-job) pairs to measure Recall@10 objectively
 - Add a **GitHub Action** to refresh job data from the Muse API on a weekly schedule
