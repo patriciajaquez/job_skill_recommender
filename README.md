@@ -1,248 +1,135 @@
-# 🚀 Job Market Intelligence Platform
+# 💼 Job Skill Recommender
 
-**Professional Data Engineering & Analytics Platform**
+> A Streamlit-based job market intelligence tool: enter your skills and target role, get ranked job matches and market insights.
 
-An enterprise-ready job market intelligence system that transforms job data from multiple APIs into actionable insights through automated pipelines, ML/AI integration, and real-time analytics.
-
-## 📊 **Current Status: Phase 1 Complete** ✅
-
-**🎯 Professional Transformation in Progress**
-- ✅ **Phase 1**: Project Assessment & Foundation (4h) - **COMPLETE**
-- 🔄 **Phase 2**: N8N Workflow Implementation (16h) - **NEXT**
-- 📋 **Phase 3**: Data Pipeline Architecture (20h) - **PLANNED**
-- 📓 **Phase 4**: Jupyter Notebook Development (36h) - **PLANNED**
-- 🚀 **Phase 5**: App Integration & Enhancement (24h) - **PLANNED**
-
-**📈 Current Capabilities:**
-- ✅ 5 API integrations with error mitigation (Adzuna, Reed, Muse, RapidAPI, Theirstack)
-- ✅ Streamlit testing interface with comprehensive error handling
-- ✅ Professional architecture planning and requirements definition
-- ✅ 120-hour implementation roadmap with success metrics
-- ✅ Clean workspace with production-ready code structure
+[![Python](https://img.shields.io/badge/Python-3.8+-blue)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.x-red)](https://streamlit.io/)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-TF--IDF-orange)](https://scikit-learn.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## 🏗️ **Target Architecture** (Phase 2+)
+## What it does
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│  Job APIs       │    │  N8N Pipeline   │    │  Azure SQL DB   │    │  Streamlit App  │
-│  - Adzuna ✅    │───▶│  - AI Enhancement│───▶│  - Jobs Table   │───▶│  - ML Dashboard │
-│  - Reed ✅      │    │  - Data Quality │    │  - Skills Table │    │  - Predictions  │
-│  - Muse ✅      │    │  - ML Integration│    │  - Companies    │    │  - Insights     │
-│  - RapidAPI ✅  │    │  - Auto Fallback│    │  - Trends       │    │  - Analytics    │
-│  - Theirstack ✅│    └─────────────────┘    └─────────────────┘    └─────────────────┘
-└─────────────────┘              │                        ▲
-                                 ▼                        │
-                    ┌─────────────────┐    ┌─────────────────┐
-                    │ AI Backup Gen   │    │ Azure Blob      │
-                    │ GPT-4 Synthetic │    │ Raw Data Store  │
-                    │ Data Generation │    │ Archive & Logs  │
-                    └─────────────────┘    └─────────────────┘
-```
+The app has **8 sections** built into a single Streamlit interface:
+
+- **🎯 Job Matching** — enter your job title, skills, location preference and experience level; TF-IDF cosine similarity ranks matching jobs from a local dataset of ~40K records, with live results from the Muse API (free) and optionally Adzuna / Reed when keys are configured
+- **💰 Salary Range** — salary distributions by role, country, seniority level, and work mode, with percentile breakdowns
+- **📉 Skills Gap Analysis** — compare your current skills against demand signals in the dataset; highlights missing skills by role and industry
+- **💼 Career Trends** — demand trends by job title and technology over time
+- **🌍 Global Insights** — market size, salary benchmarks, and growth signals across countries
+- **🔌 Live Data Pipeline** — dashboard showing the status of each connected API source
+- **🏠 Home** — market highlights and top skills at a glance
+- **ℹ️ App Information** — setup guide, API configuration, and data documentation
 
 ---
 
-## 🚀 **Quick Start** (Current Development Version)
+## Dataset
 
-### **Prerequisites**
-- Python 3.8+
-- Virtual environment (.venv configured)
-- API credentials configured in .env
+| File | Rows | Description |
+|---|---|---|
+| `data/processed/ml_features_fast.csv` | ~41,000 | Structured job features (employment type, seniority, salary range, country, skills) |
+| `data/processed/job_descriptions_sample.csv` | ~10,000 | Job descriptions for text matching |
+| `data/raw/job_postings.csv` | ~1,095 | Raw job postings (UK-focused) |
+| `data/raw/salary_data.csv` | ~375 | Salary reference data by role and region |
 
-### **1. Clone and Setup**
+---
+
+## How the matching works
+
+1. User inputs a target title, a set of skills, preferred location(s), work modality, and experience level.
+2. Each job in the dataset is scored against those inputs using **TF-IDF cosine similarity** on the combined text fields, weighted by exact-match bonuses for location and experience level.
+3. The top 25 matches are returned with a percentage score and the overlapping skills highlighted.
+4. When a live API key is configured (Adzuna, Reed, or The Muse), results are supplemented with real-time listings from those sources.
+
+---
+
+## API integrations
+
+| Provider | Free tier | Status |
+|---|---|---|
+| [The Muse](https://www.themuse.com/developers/api/v2) | ✅ No key required | Working |
+| [Adzuna](https://developer.adzuna.com) | ✅ Free registration | Working with key |
+| [Reed](https://www.reed.co.uk/developers) | ✅ Free registration | Working with key |
+| [RapidAPI](https://rapidapi.com) | ⚠️ Paid subscription | Optional |
+| [Theirstack](https://theirstack.com) | ⚠️ Paid subscription | Optional |
+
+Add your keys to a `.env` file (copy `.env.example` as a starting point). The app falls back gracefully to local data when keys are absent.
+
+---
+
+## Run locally
+
 ```bash
-# Clone the repository
+# 1. Clone
 git clone https://github.com/patriciajaquez/job_skill_recommender.git
 cd job_skill_recommender
 
-# Activate virtual environment
-source .venv/bin/activate
-
-# Install dependencies
+# 2. Create virtual environment and install dependencies
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-```
 
-### **2. Test API Integrations**
-```bash
-# Run comprehensive API testing interface
-streamlit run tests/test_api_connections_app.py
-```
+# 3. Add your API keys (optional — app works without them)
+cp .env.example .env
+# Edit .env with your keys
 
-### **3. Access Testing Interface**
-- **URL**: http://localhost:8502
-- **Features**: 
-  - Test all 5 APIs individually
-  - View sample job data from working APIs
-  - Comprehensive error handling and troubleshooting
-  - Success/failure tracking with detailed error messages
-
----
-
-## 🔑 **API Integrations Status**
-
-### **Current API Integration Status**
-1. **✅ Muse API**: Career platform - **WORKING** (no key required)
-2. **⚠️ Adzuna API**: Global job search - requires valid app ID/key
-3. **⚠️ Reed API**: UK recruitment - requires valid API key  
-4. **⚠️ RapidAPI**: Job aggregator - requires active subscription
-5. **⚠️ Theirstack API**: Tech jobs - requires valid API key
-
-### **Error Mitigation Features** 🛡️
-- ✅ Graceful API failure handling with descriptive error messages
-- ✅ Individual API testing and validation
-- ✅ Troubleshooting tips and common solutions
-- ✅ Success/failure tracking and reporting
-- ✅ Production-ready error recovery strategies
-
----
-
-## 📁 **Current Project Structure**
-
-```
-job_skill_recommender/
-├── 📱 app.py                          # Main Streamlit application
-├── 📊 scripts/
-│   └── api_integration.py             # 5 API integrations with error handling
-├── 🧪 tests/
-│   └── test_api_connections_app.py    # Comprehensive API testing interface
-├── 📓 notebooks/
-│   ├── action_plan.ipynb              # Phase 1 complete assessment & roadmap
-│   └── complete_ai_pipeline.ipynb     # ML/AI development (existing)
-├── 📝 ACTION_PLAN_CHECKLIST.md        # 120-hour implementation roadmap
-├── 📊 data/
-│   ├── processed/                     # Sample datasets and ML features
-│   └── raw/                          # Raw data files
-├── 🔧 src/
-│   ├── config.py                     # Configuration management
-│   ├── unified_data_loader.py       # Data access layer
-│   └── home_enhancements.py         # UI enhancements
-├── 🔑 .env                           # API credentials
-├── 📦 requirements.txt               # Dependencies
-└── 📖 README.md                      # This documentation
-```
-
----
-
-## 📋 **Professional Development Roadmap**
-
-### **✅ Phase 1: Foundation Complete (4 hours)**
-- ✅ 5 API integrations with comprehensive error handling
-- ✅ Professional standards and enterprise requirements defined
-- ✅ Complete architecture planning with Azure integration
-- ✅ Success metrics established (>95% data quality, <2s response time)
-- ✅ Detailed 120-hour implementation timeline
-
-### **🔄 Phase 2: N8N Workflows (Next - 16 hours)**
-- 🔄 Automated data collection pipeline (every 4 hours)
-- 🔄 ML/AI integration (skill extraction, salary prediction)
-- 🔄 Data quality validation and monitoring
-- 🔄 Fallback to AI-generated backup datasets
-
-### **📋 Upcoming Phases (100 hours)**
-- **Phase 3**: Azure SQL Database + Blob Storage (20h)
-- **Phase 4**: Jupyter Analytics Notebooks - Data preprocessing, EDA, ML pipeline (36h)
-- **Phase 5**: Enhanced Streamlit App with ML features (24h)
-- **Phase 6**: Project Structure Optimization (9h)
-- **Phase 7**: Documentation & Production Deployment (11h)
-
----
-
-## 🎯 **Target Features** (Phase 2-7)
-
-### **🤖 Planned ML/AI Integration**
-- **Skill Extraction**: GPT-4 powered skill identification from job descriptions
-- **Salary Prediction**: ML models for compensation forecasting
-- **Market Trends**: Time series analysis for job demand patterns
-- **Career Paths**: AI-powered career progression recommendations
-
-### **💾 Professional Data Architecture** 
-- **Azure SQL Database**: Structured storage for jobs, skills, companies, trends
-- **Azure Blob Storage**: Raw data archives and historical datasets
-- **AI Backup Generation**: GPT-4 synthetic datasets for system resilience
-- **Real-time Monitoring**: Data quality tracking and freshness indicators
-
-### **📊 Advanced Analytics Capabilities**
-- **Interactive Dashboards**: Real-time market insights and visualizations
-- **Custom Filtering**: Advanced search and analysis tools
-- **Export Functionality**: Data download and comprehensive reporting
-- **Personalized Insights**: User-specific recommendations and career guidance
-
----
-
-## 🔧 **Current Operations**
-
-### **Test API Integrations**
-```bash
-# Quick API status check
-python -c "
-import sys
-sys.path.append('scripts')
-from api_integration import test_api_connections
-results = test_api_connections()
-for api, status in results.items():
-    print(f'{api}: {"✅ Working" if status else "❌ Needs attention"}')"
-```
-
-### **Run Main Application**
-```bash
-# Current Streamlit app (uses existing datasets)
+# 4. Run
 streamlit run app.py
 ```
 
----
-
-## 🎯 **Success Metrics & Goals**
-
-### **Phase 1 Achievements** ✅
-- **API Integration**: 5 production-ready APIs with error mitigation
-- **Code Quality**: Clean, documented, production-ready codebase
-- **Architecture**: Enterprise-level planning and requirements definition
-- **Testing**: Comprehensive API validation and error handling
-- **Documentation**: Professional roadmap and implementation plan
-
-### **Target Success Metrics** (Phases 2-7)
-- **Data Quality**: >95% completeness, >90% accuracy
-- **Performance**: <2s response time, >99% uptime
-- **ML Accuracy**: >85% prediction accuracy for salary and job matching
-- **User Experience**: Intuitive interface with comprehensive insights
-- **Scalability**: Azure cloud deployment with enterprise capabilities
+Open [http://localhost:8501](http://localhost:8501) in your browser.
 
 ---
 
-## 🤝 **Contributing & Development**
+## Project structure
 
-**Current Status**: Phase 1 Complete ✅ | Phase 2 In Planning 🔄
-
-This project is in active development, transitioning from a functional prototype to a production-ready enterprise platform. The comprehensive 120-hour implementation plan provides a clear roadmap for professional transformation.
-
-### **Next Steps for Contributors**
-1. Review the detailed roadmap in `ACTION_PLAN_CHECKLIST.md`
-2. Examine technical specifications in `action_plan.ipynb`
-3. Test current capabilities using the API testing interface
-4. Join the Phase 2 implementation (N8N workflows and automation)
+```
+job_skill_recommender/
+├── app.py                          # Main Streamlit application (~4,500 lines)
+├── scripts/
+│   └── api_integration.py          # API connectors (Adzuna, Reed, Muse, RapidAPI, Theirstack)
+├── src/
+│   ├── apis/                       # API abstraction layer
+│   ├── data/                       # Data collectors, processors, validators
+│   └── models/                     # Job record model
+├── data/
+│   ├── raw/                        # Source datasets
+│   └── processed/                  # Cleaned and feature-engineered datasets
+├── notebooks/
+│   └── complete_ai_pipeline.ipynb  # EDA and ML experiments
+├── tests/
+│   ├── test_app.py
+│   └── test_api_connections_app.py
+├── Dockerfile
+├── requirements.txt
+├── .env.example                    # Template — copy to .env, never commit .env
+└── .gitignore
+```
 
 ---
 
-## 📚 **Documentation & Resources**
+## Stack
 
-- **📋 Complete Roadmap**: `ACTION_PLAN_CHECKLIST.md` - Detailed 7-phase implementation plan
-- **📓 Technical Specs**: `action_plan.ipynb` - Architecture, ML pipeline, and database design
-- **🧪 API Testing**: `tests/test_api_connections_app.py` - Comprehensive API validation
-- **📊 Sample Data**: `data/processed/` - Current datasets and ML features
+Python · Streamlit · pandas · scikit-learn (TF-IDF) · Plotly · NumPy · requests · python-dotenv
 
 ---
 
-**🎉 Ready to transform job market intelligence into a professional data platform!** 🚀
+## What I'd improve next
+
+- Deploy to **Streamlit Community Cloud** with a live demo link
+- Add **sentence-transformer embeddings** (`all-MiniLM-L6-v2`) for semantic matching — better at catching synonyms like "data wrangling" ↔ "ETL"
+- Build a small **evaluation set**: (CV, target-job) pairs to measure Recall@10 objectively
+- Add a **GitHub Action** to refresh job data from the Muse API on a weekly schedule
+- Modularise `app.py` into page modules for easier testing and extension
 
 ---
 
-## 📄 **License & Contact**
+## Author
 
-**Author**: Patricia Jaquez  
-**Program**: Data Science and AI Specialization  
-**Timeline**: Professional transformation in progress (August 2025)
+**Patricia Jáquez** — Data Analyst  
+[LinkedIn](https://linkedin.com/in/patricia-jaquez) · [GitHub](https://github.com/patriciajaquez)
 
-This project demonstrates enterprise-level data engineering, ML/AI integration, and professional software development practices.
+---
 
-**Status**: Production-ready foundation with comprehensive roadmap for advanced features.
+*Part of a data analytics portfolio built during the Data Science and AI Specialization at Upgrade Hub.*
