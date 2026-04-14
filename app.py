@@ -621,50 +621,97 @@ def show_main_dashboard():
     </div>
     """, unsafe_allow_html=True)
     
-    # Hero Section with key metrics
+    # Hero Section — metrics computed from actual dataset
+    try:
+        df_home = pd.read_csv('data/processed/job_descriptions_sample.csv', nrows=10000)
+        df_home.columns = [c.lower().replace(' ', '_') for c in df_home.columns]
+        total_jobs = len(df_home)
+        total_companies = df_home['company'].nunique() if 'company' in df_home.columns else 0
+        remote_jobs = int((df_home['work_type'].str.lower().str.contains('remote', na=False)).sum()) if 'work_type' in df_home.columns else 0
+        # Parse salary midpoint from "salary_range" like "$59K-$99K"
+        def _parse_salary_mid(s):
+            try:
+                nums = [int(x.replace('$','').replace('K','')) for x in str(s).split('-') if x.strip()]
+                return sum(nums) / len(nums) if nums else None
+            except Exception:
+                return None
+        if 'salary_range' in df_home.columns:
+            mids = df_home['salary_range'].apply(_parse_salary_mid).dropna()
+            avg_salary = f"${int(mids.mean())}K" if not mids.empty else "N/A"
+        else:
+            avg_salary = "N/A"
+    except Exception:
+        total_jobs, total_companies, remote_jobs, avg_salary = 0, 0, 0, "N/A"
+
     col1, col2, col3, col4 = st.columns(4)
-    
     with col1:
-        st.metric("🎯 Active Jobs", "145,000+", "+12.3%")
-    
+        st.metric("🎯 Jobs in Dataset", f"{total_jobs:,}")
     with col2:
-        st.metric("🏢 Companies", "12,500+", "+8.7%")
-    
+        st.metric("🏢 Companies", f"{total_companies:,}")
     with col3:
-        st.metric("💰 Avg Salary", "$85,000", "+5.2%")
-    
+        st.metric("💰 Avg Salary (dataset)", avg_salary)
     with col4:
-        st.metric("🌐 Remote Jobs", "61,000+", "+18.4%")
+        st.metric("🌐 Remote / Contract", f"{remote_jobs:,}")
     
     # Key Market Insights Section
     st.markdown("### 🎯 Today's Market Highlights")
     
     col1, col2, col3 = st.columns(3)
     
+    # Compute highlights from dataset
+    try:
+        _df = pd.read_csv('data/processed/job_descriptions_sample.csv', nrows=10000)
+        _df.columns = [c.lower().replace(' ', '_') for c in _df.columns]
+        # Most common job role
+        top_role = _df['role'].value_counts().idxmax() if 'role' in _df.columns else "N/A"
+        # Most common skill keyword
+        skill_keywords = ['python','sql','javascript','excel','java','aws','react','machine learning']
+        skill_counts = {}
+        if 'skills' in _df.columns:
+            skills_text = ' '.join(_df['skills'].dropna().astype(str)).lower()
+            for kw in skill_keywords:
+                skill_counts[kw] = skills_text.count(kw)
+        top_skill = max(skill_counts, key=skill_counts.get).capitalize() if skill_counts else "Python"
+        top_skill_pct = round(skill_counts.get(top_skill.lower(), 0) / max(len(_df), 1) * 100)
+        # Top paying country
+        if 'country' in _df.columns and 'salary_range' in _df.columns:
+            def _mid(s):
+                try:
+                    nums = [int(x.replace('$','').replace('K','')) for x in str(s).split('-') if x.strip()]
+                    return sum(nums)/len(nums) if nums else None
+                except Exception:
+                    return None
+            _df['_salary_mid'] = _df['salary_range'].apply(_mid)
+            top_country = _df.groupby('country')['_salary_mid'].mean().idxmax()
+        else:
+            top_country = "N/A"
+    except Exception:
+        top_role, top_skill, top_skill_pct, top_country = "N/A", "Python", 0, "N/A"
+
     with col1:
-        st.markdown("""
+        st.markdown(f"""
         <div class="metric-card" style="text-align: center;">
-            <h4>🚀 Fastest Growing</h4>
-            <p class="metric-value" style="color: #28a745; font-size: 1.5rem;">AI/ML Engineering</p>
-            <p class="metric-label">+127% year-over-year demand</p>
+            <h4>🏆 Top Role in Dataset</h4>
+            <p class="metric-value" style="color: #28a745; font-size: 1.5rem;">{top_role}</p>
+            <p class="metric-label">Most listed role</p>
         </div>
         """, unsafe_allow_html=True)
-    
+
     with col2:
-        st.markdown("""
+        st.markdown(f"""
         <div class="metric-card" style="text-align: center;">
-            <h4>💎 Most In-Demand</h4>
-            <p class="metric-value" style="color: #667eea; font-size: 1.5rem;">Python</p>
-            <p class="metric-label">68% of job postings</p>
+            <h4>💎 Most Mentioned Skill</h4>
+            <p class="metric-value" style="color: #667eea; font-size: 1.5rem;">{top_skill}</p>
+            <p class="metric-label">In {top_skill_pct}% of job descriptions</p>
         </div>
         """, unsafe_allow_html=True)
-    
+
     with col3:
-        st.markdown("""
+        st.markdown(f"""
         <div class="metric-card" style="text-align: center;">
-            <h4>📍 Top Paying Market</h4>
-            <p class="metric-value" style="color: #fd7e14; font-size: 1.5rem;">San Francisco</p>
-            <p class="metric-label">$142K average salary</p>
+            <h4>📍 Highest Avg Salary</h4>
+            <p class="metric-value" style="color: #fd7e14; font-size: 1.5rem;">{top_country}</p>
+            <p class="metric-label">By country in dataset</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -812,46 +859,7 @@ def generate_company_info(company_name):
             'Received industry recognition awards'
         ]
     }
-    """Calculate an enhanced match score using TF-IDF and multiple factors"""
-    try:
-        # Get job details
-        job_title = job.get('title', '').lower()
-        job_description = job.get('description', '').lower()
-        job_requirements = job.get('requirements', [])
-        
-        # Combine all job text
-        if isinstance(job_requirements, list):
-            job_text = f"{job_title} {job_description} {' '.join(job_requirements)}"
-        else:
-            job_text = f"{job_title} {job_description} {str(job_requirements)}"
-        
-        # User profile text
-        user_text = f"{user_title.lower()} {' '.join([skill.lower() for skill in user_skills])}"
-        
-        # TF-IDF similarity (40% weight)
-        vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
-        try:
-            tfidf_matrix = vectorizer.fit_transform([job_text, user_text])
-            cosine_sim = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-        except:
-            cosine_sim = 0
-        
-        # Exact skill matches (40% weight)
-        job_text_lower = job_text.lower()
-        skill_matches = sum(1 for skill in user_skills if skill.lower() in job_text_lower)
-        skill_score = min(skill_matches / max(len(user_skills), 1), 1.0)
-        
-        # Title similarity (20% weight)
-        user_title_words = set(user_title.lower().split())
-        job_title_words = set(job_title.split())
-        title_overlap = len(user_title_words & job_title_words) / max(len(user_title_words | job_title_words), 1)
-        
-        # Combined score
-        final_score = (cosine_sim * 0.4) + (skill_score * 0.4) + (title_overlap * 0.2)
-        return min(final_score * 100, 100)
-        
-    except Exception as e:
-        return 0
+
 
 def show_smart_job_matching():
     """Display the job matching interface with live API data"""
@@ -865,11 +873,13 @@ def show_smart_job_matching():
     # Load live data or fallback to global data
     try:
         comprehensive_data = load_comprehensive_data()
-        use_live_data = comprehensive_data and comprehensive_data.get('source') == 'live_api'
-        
+        use_live_data = bool(comprehensive_data and comprehensive_data.get('live_data'))
+
         if use_live_data:
-            st.info("🔴 **LIVE DATA**: Showing real jobs from APIs (Adzuna, Reed, Muse, RapidAPI)")
-            live_jobs = comprehensive_data['jobs']
+            sources_list = comprehensive_data.get('summary', {}).get('sources', [])
+            sources_label = ', '.join(sources_list) if sources_list else 'local dataset'
+            st.info(f"📂 **DATA LOADED**: {comprehensive_data['summary']['total_jobs']:,} jobs from {sources_label}")
+            live_jobs = comprehensive_data['live_data']
         else:
             st.info("📊 **DEMO DATA**: Using sample data for demonstration")
             live_jobs = None
@@ -2516,8 +2526,7 @@ def show_salary_analytics():
         st.metric("📈 Median Salary", f"${median_salary:,.0f}")
     
     with col3:
-        yoy_growth = np.random.uniform(3.2, 12.8)  # Simulate YoY growth
-        st.metric("📈 YoY Growth", f"+{yoy_growth:.1f}%")
+        st.metric("📈 YoY Growth", "Dataset")
     
     with col4:
         total_positions = len(salary_df)
@@ -3813,100 +3822,46 @@ def show_live_data_pipeline():
             if API_INTEGRATION_AVAILABLE:
                 with st.spinner("Fetching live job data..."):
                     try:
-                        live_df = get_live_job_data(search_query, location, max_jobs)
-                        
-                        if not live_df.empty:
-                            st.success(f"✅ Successfully fetched {len(live_df)} jobs!")
-                            
+                        # get_live_job_data returns Dict[source_name, List[Dict]]
+                        live_result = get_live_job_data(search_query, location)
+
+                        # Flatten into a list, tagging each job with its source
+                        all_jobs = []
+                        for src, jobs in live_result.items():
+                            for job in jobs[:max_jobs]:
+                                job['_source'] = src.capitalize()
+                                all_jobs.append(job)
+
+                        if all_jobs:
+                            st.success(f"✅ Successfully fetched {len(all_jobs)} jobs!")
+                            live_df = pd.DataFrame(all_jobs)
+
                             # Show summary metrics
                             col1, col2, col3, col4 = st.columns(4)
-                            
                             with col1:
                                 st.metric("Total Jobs", len(live_df))
-                            
                             with col2:
-                                unique_companies = live_df['company'].nunique()
-                                st.metric("Companies", unique_companies)
-                            
+                                company_col = next((c for c in ['company','company_name','employer'] if c in live_df.columns), None)
+                                st.metric("Companies", live_df[company_col].nunique() if company_col else "N/A")
                             with col3:
-                                avg_salary = live_df['salary_avg'].dropna().mean()
-                                if not pd.isna(avg_salary):
-                                    st.metric("Avg Salary", f"${avg_salary:,.0f}")
-                                else:
-                                    st.metric("Avg Salary", "N/A")
-                            
+                                st.metric("Avg Salary", "See individual listings")
                             with col4:
-                                sources = live_df['source'].nunique()
-                                st.metric("Data Sources", sources)
-                            
-                            # Show data sources breakdown
+                                st.metric("Data Sources", live_df['_source'].nunique())
+
+                            # Data sources breakdown
                             st.markdown("### 📈 Data Sources Breakdown")
-                            source_counts = live_df['source'].value_counts()
-                            
+                            source_counts = live_df['_source'].value_counts()
                             col1, col2 = st.columns(2)
-                            
                             with col1:
-                                fig_pie = px.pie(
-                                    values=source_counts.values, 
-                                    names=source_counts.index,
-                                    title="Jobs by Source"
-                                )
+                                fig_pie = px.pie(values=source_counts.values, names=source_counts.index, title="Jobs by Source")
                                 st.plotly_chart(fig_pie, use_container_width=True)
-                            
-                            with col2:
-                                # Show requirements frequency
-                                all_requirements = []
-                                for reqs in live_df['requirements']:
-                                    if isinstance(reqs, list):
-                                        all_requirements.extend(reqs)
-                                
-                                if all_requirements:
-                                    req_counts = pd.Series(all_requirements).value_counts().head(10)
-                                    fig_bar = px.bar(
-                                        x=req_counts.values,
-                                        y=req_counts.index,
-                                        orientation='h',
-                                        title="Top Skills Required"
-                                    )
-                                    fig_bar.update_layout(yaxis={'categoryorder':'total ascending'})
-                                    st.plotly_chart(fig_bar, use_container_width=True)
-                            
-                            # Show sample jobs
+
+                            # Sample jobs table
                             st.markdown("### 📋 Sample Jobs Retrieved")
-                            display_df = live_df[['title', 'company', 'location', 'source', 'salary_avg']].head(10)
-                            display_df['salary_avg'] = display_df['salary_avg'].apply(
-                                lambda x: f"${x:,.0f}" if pd.notna(x) else "N/A"
-                            )
-                            st.dataframe(display_df, use_container_width=True)
-                            
-                            # Show detailed job
-                            st.markdown("### 🔍 Job Details")
-                            if len(live_df) > 0:
-                                selected_job_idx = st.selectbox(
-                                    "Select a job to view details:",
-                                    range(len(live_df)),
-                                    format_func=lambda x: f"{live_df.iloc[x]['title']} at {live_df.iloc[x]['company']}"
-                                )
-                                
-                                selected_job = live_df.iloc[selected_job_idx]
-                                
-                                st.markdown(f"""
-                                **Title:** {selected_job['title']}  
-                                **Company:** {selected_job['company']}  
-                                **Location:** {selected_job['location']}  
-                                **Source:** {selected_job['source']}  
-                                **Requirements:** {', '.join(selected_job['requirements']) if selected_job['requirements'] else 'N/A'}  
-                                **Experience Level:** {selected_job['experience_level']}  
-                                **Employment Type:** {selected_job['employment_type']}  
-                                
-                                **Description:**  
-                                {selected_job['description'][:500]}...
-                                """)
-                                
-                                if selected_job['url']:
-                                    st.markdown(f"[🔗 Apply Here]({selected_job['url']})")
+                            preview_cols = [c for c in ['title','job_title','company','company_name','location','_source'] if c in live_df.columns]
+                            st.dataframe(live_df[preview_cols].head(10), use_container_width=True)
                         else:
-                            st.warning("⚠️ No jobs found. Try different search terms.")
+                            st.warning("⚠️ No jobs found. APIs may require credentials — check the API status above.")
                             
                     except Exception as e:
                         st.error(f"❌ Error fetching live data: {str(e)}")
